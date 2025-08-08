@@ -19,6 +19,7 @@ fn Vagon(img: Option<String>) -> Element {
                 display: "block",
                 margin_left: "auto",
                 margin_right: "auto",
+                align_self: "flex-end",
             }
         },
         None => rsx! {},
@@ -115,6 +116,7 @@ fn Train() -> Element {
                 height: "70%",
                 top: "0px",
                 left: "45%",
+                display: "flex",
                 z_index: -1,
                 Vagon { img: vagon_img() }
             }
