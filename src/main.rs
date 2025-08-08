@@ -1,4 +1,4 @@
-use std::{mem, ops::Deref, rc::Rc};
+use std::{mem, rc::Rc};
 
 use dioxus::{logger::tracing, prelude::*};
 
@@ -66,7 +66,7 @@ fn Train() -> Element {
         div {
             display: "inline-block",
             position: "relative",
-            ontransitionend: move |evt| {
+            ontransitionend: move |evt| async move {
                 // hacky as fuck but dioxus doesn't offer ANY way to get
                 // the data of an event so whatever
 
@@ -78,7 +78,22 @@ fn Train() -> Element {
 
                 if evt.property_name() == "left" {
                     match train_state() {
-                        TrainState::Going => train_state.set(TrainState::Returning),
+                        TrainState::Going => {
+                            let img_url = {
+                                loop {
+                                    match reqwest::get("https://picsum.photos/0").await {
+                                        Ok(res) => break res.url().as_str().to_owned(),
+                                        _ => {
+                                            tracing::error!("Request failed, retrying...")
+                                        },
+                                    }
+                                }
+                            };
+
+                            vagon_img.set(Some(img_url));
+
+                            train_state.set(TrainState::Returning)
+                        },
                         TrainState::Returning => train_state.set(TrainState::Still),
                         TrainState::Still => unreachable!(),
                     }
