@@ -57,13 +57,10 @@ impl TrainState {
 
 #[component]
 fn Train() -> Element {
-    let mut vagon_img = use_signal(|| {
-        Some("https://images.unsplash.com/photo-1526779259212-939e64788e3c".to_owned())
-    });
+    let mut vagon_img = use_signal(|| None);
 
     let mut train_state = use_signal(|| TrainState::Still);
     rsx! {
-        "{train_state:?}",
         div {
             display: "inline-block",
             position: "relative",
@@ -111,7 +108,6 @@ fn Train() -> Element {
             }
             div {
                 position: "absolute",
-                background_color: "yellow",
                 width: "50%",
                 height: "70%",
                 top: "0px",
