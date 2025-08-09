@@ -1,4 +1,4 @@
-use std::{cell::LazyCell, mem, rc::Rc};
+use std::{cell::LazyCell, io, mem, rc::Rc, sync::LazyLock};
 
 use const_base::{encode_as_str, Config};
 use dioxus::{logger::tracing, prelude::*};
@@ -12,6 +12,29 @@ const CLIENT: LazyCell<reqwest::Client> = LazyCell::new(|| {
         .build()
         .unwrap()
 });
+
+const TRAIN_START_SOUND: io::Cursor<&[u8]> =
+    io::Cursor::new(include_bytes!("../assets/TrainStart.ogg"));
+const TRAIN_END_SOUND: io::Cursor<&[u8]> =
+    io::Cursor::new(include_bytes!("../assets/TrainEnd.ogg"));
+
+struct AudioPlayer {
+    stream_handle: rodio::OutputStream,
+}
+
+impl AudioPlayer {
+    const fn new() -> LazyLock<Self> {
+        LazyLock::new(|| Self {
+            stream_handle: rodio::OutputStreamBuilder::open_default_stream().unwrap(),
+        })
+    }
+
+    fn play(&self, clip: impl io::Read + io::Seek + Send + Sync + 'static) -> rodio::Sink {
+        rodio::play(self.stream_handle.mixer(), clip).unwrap()
+    }
+}
+
+static AUDIO: LazyLock<AudioPlayer> = AudioPlayer::new();
 
 fn main() {
     dioxus::launch(App);
@@ -69,6 +92,9 @@ fn Train() -> Element {
     let mut vagon_img = use_signal(|| None);
 
     let mut train_state = use_signal(|| TrainState::Still);
+
+    let mut current_clip = use_signal(|| None);
+
     rsx! {
         div {
             display: "inline-block",
@@ -103,6 +129,8 @@ fn Train() -> Element {
 
                             vagon_img.set(Some(img_url));
 
+                            current_clip.set(Some(AUDIO.play(TRAIN_END_SOUND)));
+
                             train_state.set(TrainState::Returning)
                         },
                         TrainState::Returning => train_state.set(TrainState::Still),
@@ -134,7 +162,10 @@ fn Train() -> Element {
             font_size: "24px",
             padding: "20px",
             margin_top: "20px",
-            onclick: move |_| train_state.set(TrainState::Going),
+            onclick: move |_| {
+                current_clip.set(Some(AUDIO.play(TRAIN_START_SOUND)));
+                train_state.set(TrainState::Going)
+            },
             disabled: !train_state().button_enabled(),
             "🚂 Parti",
         }
