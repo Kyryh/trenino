@@ -1,8 +1,16 @@
-use std::{mem, rc::Rc};
+use std::{cell::LazyCell, mem, rc::Rc};
 
 use dioxus::{logger::tracing, prelude::*};
+use reqwest::{redirect, Client};
 
 const TRAIN_SPRITE: Asset = asset!("/assets/train.png");
+
+const CLIENT: LazyCell<reqwest::Client> = LazyCell::new(|| {
+    Client::builder()
+        .redirect(redirect::Policy::none())
+        .build()
+        .unwrap()
+});
 
 fn main() {
     dioxus::launch(App);
@@ -79,8 +87,12 @@ fn Train() -> Element {
                         TrainState::Going => {
                             let img_url = {
                                 loop {
-                                    match reqwest::get("https://picsum.photos/0").await {
-                                        Ok(res) => break res.url().as_str().to_owned(),
+                                    let req = CLIENT.get("https://picsum.photos/0").send().await;
+                                    tracing::info!("{:?}", req);
+                                    match req {
+                                        Ok(res) if res.status() == 302 => {
+                                            break res.headers()["location"].to_str().unwrap().to_owned()
+                                        },
                                         _ => {
                                             tracing::error!("Request failed, retrying...")
                                         },
