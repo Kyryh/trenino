@@ -1,9 +1,10 @@
 use std::{cell::LazyCell, mem, rc::Rc};
 
+use const_base::{encode_as_str, Config};
 use dioxus::{logger::tracing, prelude::*};
 use reqwest::{redirect, Client};
 
-const TRAIN_SPRITE: Asset = asset!("/assets/train.png");
+const TRAIN_SPRITE: &str = encode_as_str!(include_bytes!("../assets/train.png"), Config::B64);
 
 const CLIENT: LazyCell<reqwest::Client> = LazyCell::new(|| {
     Client::builder()
@@ -115,7 +116,7 @@ fn Train() -> Element {
             transition_property: "transform, left",
             transition_duration: "0.5s, 5s",
             img {
-                src: TRAIN_SPRITE,
+                src: "data:image/png;base64,{TRAIN_SPRITE}",
                 max_width: "100%",
             }
             div {

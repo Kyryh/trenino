@@ -5,6 +5,7 @@ authors = ["Kyryh <71778401+Kyryh@users.noreply.github.com>"]
 edition = "2021"
 
 [dependencies]
+const_base = "0.2.0"
 dioxus = { version = "0.6.0", features = [] }
 reqwest = "0.12.22"
 
